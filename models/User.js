@@ -36,8 +36,9 @@ const userSchema = mongoose.Schema({
         default : null
     },
     role : {
-        type : String,
-        default : "Author"
+        type : mongoose.Schema.Types.ObjectId,
+        ref  : "Role",
+        required : true
     },
     status: {
         type: Boolean,

@@ -21,7 +21,7 @@ const tokenVerify = (req, res, next) => {
       // get user's data
       const me = await User.findOne({ email: decode.email }).select(
         "-password"
-      );
+      ).populate("role");
 
       // asign value to req.me
       req.me = me;

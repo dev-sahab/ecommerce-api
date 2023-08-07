@@ -4,15 +4,18 @@ import colors from "colors";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import connectDB from "./config/db.js";
+import errorHandler from "./middlewares/errorHandler.js";
 
-// custom modules import
+/** Routers */
 import user from "./routes/user.js";
 import auth from "./routes/auth.js";
-import product from "./routes/product.js";
-import productCategory from "./routes/productCategory.js";
-import productBrand from "./routes/productBrand.js";
-import productTag from "./routes/productTag.js";
-import errorHandler from "./middlewares/errorHandler.js";
+import permission from "./routes/permission.js";
+import role from "./routes/role.js";
+// import product from "./routes/product.js";
+// import productCategory from "./routes/productCategory.js";
+// import productBrand from "./routes/productBrand.js";
+// import productTag from "./routes/productTag.js";
+/** /Routers */
 
 // express init
 const app = express();
@@ -36,10 +39,12 @@ app.use(express.static("public"));
 // routes
 app.use("/api/v1/user", user);
 app.use("/api/v1/auth", auth);
-app.use("/api/v1/product/category", productCategory);
-app.use("/api/v1/product/brand", productBrand);
-app.use("/api/v1/product/tag", productTag);
-app.use("/api/v1/product", product);
+app.use("/api/v1/permission", permission);
+app.use("/api/v1/role", role);
+// app.use("/api/v1/product/category", productCategory);
+// app.use("/api/v1/product/brand", productBrand);
+// app.use("/api/v1/product/tag", productTag);
+// app.use("/api/v1/product", product);
 
 // error Handler
 app.use(errorHandler);

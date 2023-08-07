@@ -1,5 +1,8 @@
-import bcrypt from "bcrypt"
+import bcrypt from "bcrypt";
 import User from "../models/User.js";
+import asyncHandler from "express-async-handler";
+import { sendMail } from "../utils/sendMail.js";
+import Role from "../models/Role.js";
 
 /**
  * @Desc Get All Users
@@ -10,13 +13,10 @@ import User from "../models/User.js";
 export const getAllUsers = async (req, res, next) => {
   try {
     // get all user data
-    const user = await User.find();
+    const user = await User.find().select("-password").populate("role");
 
     // send a message with all user data
-    res.status(200).json({
-      message: "All Users",
-      users: user,
-    });
+    res.status(200).json(user);
   } catch (error) {
     next(error);
   }
@@ -32,7 +32,7 @@ export const getSingleUser = async (req, res, next) => {
   try {
     // get single user data
     const user = await User.findById(req.params.id);
-    
+
     // send a message with user data
     res.status(200).json({
       message: "Single User",
@@ -43,32 +43,49 @@ export const getSingleUser = async (req, res, next) => {
   }
 };
 
-
 /**
  * @Desc create new user
  * @Route /api/v1/user
  * @METHOD POST
  * @Access public
  */
-export const createUser = async (req, res, next) => {
-  const { name, email, password } = req.body;
-  try {
-    // hash password 
-    const hashPass = await bcrypt.hash(password, 10);
+export const createUser = asyncHandler(async (req, res) => {
+  const { name, email, password, role } = req.body;
 
-    // create new user
-    const user = await User.create({
-      name: name,
-      email: email,
-      password: hashPass
-    });
+  if (!name || !email || !password || !role)
+    return res.status(400).json({ message: "All fields are required!" });
 
-    // send a message with new user details
-    res.status(201).json({
-      message: "User created successfully",
-      user,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+  // email check
+  const emailCheck = await User.findOne({ email: email });
+  // verify email
+  if (emailCheck)
+    return res.status(400).json({ message: "Email is already exist!!" });
+
+  // hash password
+  const hashPass = await bcrypt.hash(password, 10);
+
+  // find role name
+  const roleName = await Role.findOne({ _id: role });
+
+  // create new user
+  const user = await User.create({
+    name: name,
+    email: email,
+    password: hashPass,
+    role: roleName,
+  });
+
+  sendMail({
+    to: email,
+    sub: "Dashboard Access",
+    msg: `Your Dashboard Access. Email : ${email}, Password : ${password}`,
+  });
+
+      // Remove password from loginUser object
+      const { password: _, ...userWithoutPassword } = user._doc;
+  // send a message with new user details
+  res.status(201).json({
+    user : userWithoutPassword,
+    message: "User created successfully",
+  });
+});

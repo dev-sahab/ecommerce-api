@@ -1,5 +1,5 @@
 // create slug 
-const slugify = (str) => {
+const createSlug = (str) => {
     str = str.replace(/^\s+|\s+$/g, ''); // trim
     str = str.toLowerCase();
 
@@ -18,4 +18,4 @@ const slugify = (str) => {
 }
 
 // export 
-export default slugify;
+export default createSlug;

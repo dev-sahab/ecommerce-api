@@ -33,7 +33,6 @@ export const registerUser = asyncHandler(async (req, res) => {
 
   // send a message with new user details
   res.status(201).json({
-    user,
     message: "User created successfully",
   });
 });
@@ -51,7 +50,7 @@ export const loginUser = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "All fields are required" });
 
   // check email
-  const loginUser = await User.findOne({ email });
+  const loginUser = await User.findOne({ email }).populate("role");
 
   // validate email
   if (!loginUser) return res.status(404).json({ message: "User not found" });
@@ -79,6 +78,9 @@ export const loginUser = asyncHandler(async (req, res) => {
     { expiresIn: process.env.REFRESH_TOKEN_EXPIRE_IN }
   );
 
+    // Remove password from loginUser object
+    const { password: _, ...userWithoutPassword } = loginUser._doc;
+
   // set access token to cookie
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
@@ -91,7 +93,7 @@ export const loginUser = asyncHandler(async (req, res) => {
   // send a message with user details
   res.status(200).json({
     accessToken,
-    user: loginUser,
+    user: userWithoutPassword,
     message: "User Logged In",
   });
 });
@@ -119,7 +121,7 @@ export const me = asyncHandler(async (req, res) => {
 
 /**
  * @Desc user password reset
- * @Route /api/v1/auth/login
+ * @Route /api/v1/auth/reset-password
  * @METHOD PATCH
  * @Access private
  */
@@ -162,7 +164,7 @@ export const userPasswordReset = asyncHandler(async (req, res) => {
 
 /**
  * @Desc user details update
- * @Route /api/v1/auth/login
+ * @Route /api/v1/auth/profile-update
  * @METHOD patch
  * @Access private
  */
@@ -187,7 +189,7 @@ export const userDataUpdate = asyncHandler(async (req, res) => {
       photo: req.file ? req.file.filename : user.photo,
     },
     { new: true }
-  ).select("-password");
+  ).select("-password").populate('role');
 
   res.status(200).json({
     user: data,
