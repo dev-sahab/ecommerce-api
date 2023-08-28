@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import asyncHandler from "express-async-handler";
+import { cloudUpload } from "../utils/cloudinary.js";
 
 /**
  * @Desc create new user
@@ -177,6 +178,8 @@ export const userDataUpdate = asyncHandler(async (req, res) => {
   // validate user
   if (!user) return res.status(400).json({ message: "User not found!" });
 
+  // upload photo to cloud
+  const profileImage = await cloudUpload(req);
   // update data
   const data = await User.findByIdAndUpdate(
     user.id,
@@ -186,7 +189,7 @@ export const userDataUpdate = asyncHandler(async (req, res) => {
       phone: phone ? phone : user.phone,
       address: address ? address : user.address,
       birth_date: birth_date ? birth_date : user.birth_date,
-      photo: req.file ? req.file.filename : user.photo,
+      photo: profileImage ? profileImage.secure_url : user.photo,
     },
     { new: true }
   ).select("-password").populate('role');

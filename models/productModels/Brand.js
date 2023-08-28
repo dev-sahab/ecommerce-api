@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 // create schema for category
-const categorySchema = mongoose.Schema({
+const brandSchema = mongoose.Schema({
     name : {
         type : String,
         required : true,
@@ -11,10 +11,8 @@ const categorySchema = mongoose.Schema({
     slug : {
         type : String,
         required : true,
-        unique : true,
-        trim : true
     },
-    photo : {
+    logo : {
         type : String,
         trim : true,
         default : null
@@ -32,4 +30,4 @@ const categorySchema = mongoose.Schema({
 })
 
 // export schema model
-export default mongoose.model("Category", categorySchema)
+export default mongoose.model("Brand", brandSchema)

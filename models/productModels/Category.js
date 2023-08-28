@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 // create schema for category
-const brandSchema = mongoose.Schema({
+const categorySchema = mongoose.Schema({
     name : {
         type : String,
         required : true,
@@ -19,6 +19,16 @@ const brandSchema = mongoose.Schema({
         trim : true,
         default : null
     },
+    subCategory : {
+        type: [mongoose.Schema.Types.ObjectId],
+        ref: "Category",
+        default: []
+    },
+    parentCategory : {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Category",
+        default: null
+    },
     trash : {
         type : Boolean,
         default : false
@@ -32,4 +42,4 @@ const brandSchema = mongoose.Schema({
 })
 
 // export schema model
-export default mongoose.model("Brand", brandSchema)
+export default mongoose.model("Category", categorySchema)

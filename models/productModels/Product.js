@@ -14,11 +14,11 @@ const productSchema = mongoose.Schema({
     },
     sale_price : {
         type: Number,
-        required: true
+        default : null
     },
     regular_price : {
         type: Number,
-        default : null
+        required: true
     },
     short_desc : {
         type: String,
@@ -37,7 +37,8 @@ const productSchema = mongoose.Schema({
     photo : {
         type: String,
         trim: true,
-        required : true
+        // required : true
+        default: null
     },
     gallery : {
         type: Array,
@@ -46,15 +47,18 @@ const productSchema = mongoose.Schema({
     },
     categories : {
         type : mongoose.Schema.Types.ObjectId,
-        ref : "Category"
+        ref : "Category",
+        default: null
     },
     tags : {
         type : mongoose.Schema.Types.ObjectId,
-        ref : "Tag"
+        ref : "Tag",
+        default: null
     },
     brand : {
         type : mongoose.Schema.Types.ObjectId,
-        ref : "Brand"
+        ref : "Brand",
+        default: null
     },
     status: {
         type: Boolean,

@@ -7,14 +7,14 @@ import connectDB from "./config/db.js";
 import errorHandler from "./middlewares/errorHandler.js";
 
 /** Routers */
-import user from "./routes/user.js";
-import auth from "./routes/auth.js";
-import permission from "./routes/permission.js";
-import role from "./routes/role.js";
-// import product from "./routes/product.js";
-// import productCategory from "./routes/productCategory.js";
-// import productBrand from "./routes/productBrand.js";
-// import productTag from "./routes/productTag.js";
+import userRouter from "./routes/user.js";
+import authRouter from "./routes/auth.js";
+import permissionRouter from "./routes/permission.js";
+import roleRouter from "./routes/role.js";
+import productBrandRouter from "./routes/productRouters/productBrand.js";
+import productTagRouter from "./routes/productRouters/productTag.js";
+import productCategoryRouter from "./routes/productRouters/productCategory.js";
+import productRouter from "./routes/productRouters/product.js";
 /** /Routers */
 
 // express init
@@ -28,23 +28,25 @@ const PORT = process.env.PORT || 4000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(cors({
-  origin : "http://localhost:3000",
-  credentials : true,
-}));
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  })
+);
 
 // static folder
 app.use(express.static("public"));
 
 // routes
-app.use("/api/v1/user", user);
-app.use("/api/v1/auth", auth);
-app.use("/api/v1/permission", permission);
-app.use("/api/v1/role", role);
-// app.use("/api/v1/product/category", productCategory);
-// app.use("/api/v1/product/brand", productBrand);
-// app.use("/api/v1/product/tag", productTag);
-// app.use("/api/v1/product", product);
+app.use("/api/v1/user", userRouter);
+app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/permission", permissionRouter);
+app.use("/api/v1/role", roleRouter);
+app.use("/api/v1/product/brand", productBrandRouter);
+app.use("/api/v1/product/tag", productTagRouter);
+app.use("/api/v1/product/category", productCategoryRouter);
+app.use("/api/v1/product", productRouter);
 
 // error Handler
 app.use(errorHandler);
