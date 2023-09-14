@@ -1,32 +1,11 @@
 import multer from "multer";
 
-/**
+// create storage
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    if (file.fieldname == "product-category") {
-      cb(null, "public/products/categories");
-    }
-    if (file.fieldname == "product-brand") {
-      cb(null, "public/products/brands");
-    }
-    if (
-      file.fieldname == "product-photo" ||
-      file.fieldname == "product-gallery"
-    ) {
-      cb(null, "public/products");
-    }
-    if (file.fieldname == "user-profile") {
-      cb(null, "public/user");
-    }
-  },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + "_" + file.originalname);
+    cb(null, Date.now() + "_" + file.fieldname + "_" + file.originalname);
   },
 });
- */
-
-// create storage
-const storage = multer.memoryStorage();
 
 // product brand logo multer middleware
 export const productBrandMulter = multer({ storage }).single("brand-logo");

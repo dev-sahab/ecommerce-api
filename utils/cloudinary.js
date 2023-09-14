@@ -1,29 +1,32 @@
-import dotenv from "dotenv"
+import dotenv from "dotenv";
 import { v2 as cloudinary } from "cloudinary";
-import fs from "fs";
 
-dotenv.config()
+dotenv.config();
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
   api_key: process.env.CLOUD_API_KEY,
   api_secret: process.env.CLOUD_API_SECRET,
 });
+// upload file to cloudinary
+export const cloudUpload = async (path, destination = "wolmart") => {
+  // file upload destination
+  const folder = () => {
+    const filedName = destination;
+    if (filedName == "brand-logo") return "wolmart/brand"; // brand logo
+    if (filedName == "product-category") return "wolmart/category"; // product category
+    if (filedName == "user-profile") return "wolmart/user"; // user profile photo
+    return filedName;
+  };
 
-export const cloudUpload = async (req) => {
+  // upload file server to cloud
+  const result = await cloudinary.uploader.upload(path, {
+    folder: folder(),
+  });
 
-  if (req.file) {
-    // upload file to server
-    fs.writeFileSync("./" + req.file.originalname, req.file.buffer);
+  return result;
+};
 
-    // upload file server to cloud
-    const data = await cloudinary.uploader.upload(
-      "./" + req.file.originalname,
-      req.file.buffer
-    );
-
-    // delete server file
-    fs.unlinkSync("./" + req.file.originalname);
-
-    return data;
-  }
+// delete file from cloudinary
+export const cloudDelete = async (publicId) => {
+  await cloudinary.uploader.destroy(`wolmart/${publicId}`);
 };

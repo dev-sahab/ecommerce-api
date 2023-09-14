@@ -1,7 +1,8 @@
 import asyncHandler from "express-async-handler";
 import Brand from "../../models/productModels/Brand.js";
 import createSlug from "../../utils/createSlug.js";
-import { cloudUpload } from "../../utils/cloudinary.js";
+import { cloudDelete, cloudUpload } from "../../utils/cloudinary.js";
+import { findPublicId } from "../../helper/helper.js";
 
 /**
  * @Desc Get All Brands
@@ -58,14 +59,22 @@ export const createProductBrand = asyncHandler(async (req, res) => {
   if (isExistedName)
     return res.status(400).json({ message: "Brand name is aleady exist!" });
 
-  const logo = await cloudUpload(req);
+  // logo value
+  let uploadedLogo = null;
 
+  if (req.file) {
+    const logo = await cloudUpload(req.file.path, req.file.fieldname);
+    uploadedLogo = logo.secure_url;
+  }
+
+  // create brand data
   const newBrand = await Brand.create({
     name: name,
     slug: createSlug(name),
-    logo: logo ? logo?.secure_url : null,
+    logo: uploadedLogo,
   });
 
+  // response
   res.status(201).json({
     brand: newBrand,
     message: "Brand Created Successful",
@@ -83,29 +92,31 @@ export const updateProductBrand = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   // get previouse data
-  const prevData = await Brand.findById(id);
+  const brandUpdate = await Brand.findById(id);
 
   // form validation
   if (!name)
     return res.status(400).json({ message: "Name filed is required!" });
 
-  // upload logo to cloudinary
-  const logo = await cloudUpload(req);
+  // brand logo
+  let updatedLogo = brandUpdate.logo;
+
+  if (req.file) {
+    // upload logo to cloudinary
+    const logo = await cloudUpload(req.file.path, req.file.fieldname);
+    await cloudDelete(`brand/${findPublicId(brandUpdate.logo)}`);
+    updatedLogo = logo.secure_url;
+  }
 
   // update brand
-  const updatedBrand = await Brand.findByIdAndUpdate(
-    id,
-    {
-      name: name ? name : prevData.name,
-      slug: name ? createSlug(name) : prevData.slug,
-      logo: logo ? logo.secure_url : prevData.logo,
-    },
-    { new: true }
-  );
+  brandUpdate.name = name;
+  brandUpdate.slug = createSlug(name);
+  brandUpdate.logo = updatedLogo;
+  brandUpdate.save();
 
   // response
   res.status(200).json({
-    brand: updatedBrand,
+    brand: brandUpdate,
     message: "Brand Updated Successful",
   });
 });
@@ -121,6 +132,11 @@ export const deleteProductBrand = asyncHandler(async (req, res) => {
 
   // delete brand
   const deletedBrand = await Brand.findByIdAndDelete(id);
+
+  // delete brand
+  if (deletedBrand.logo) {
+    await cloudDelete(`brand/${findPublicId(deletedBrand.logo)}`);
+  }
 
   // response
   res.status(200).json({
