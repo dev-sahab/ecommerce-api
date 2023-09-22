@@ -1,7 +1,8 @@
 import asyncHandler from "express-async-handler";
 import Category from "../../models/productModels/Category.js";
 import createSlug from "../../utils/createSlug.js";
-import { cloudUpload } from "../../utils/cloudinary.js";
+import { cloudDelete, cloudUpload } from "../../utils/cloudinary.js";
+import { findPublicId } from "../../helper/helper.js";
 
 /**
  * @Desc Get All category
@@ -97,7 +98,7 @@ export const getSingleProductCategory = asyncHandler(async (req, res) => {
  * @Access private
  */
 export const createProductCategory = asyncHandler(async (req, res) => {
-  const { name, parentCategory } = req.body;
+  const { name, icon, parentCategory } = req.body;
 
   // form validation
   if (!name)
@@ -109,14 +110,25 @@ export const createProductCategory = asyncHandler(async (req, res) => {
   if (isExistedName)
     return res.status(400).json({ message: "Category name is aleady exist!" });
 
+  // category icon
+  let catIcon = null;
+  if (icon) {
+    catIcon = icon;
+  }
+
   // upload category image to cloud
-  const categoryImage = await cloudUpload(req);
+  let catPhoto = null;
+  if (req.file) {
+    const categoryImage = await cloudUpload(req.file);
+    catPhoto = categoryImage.secure_url;
+  }
 
   const newCategory = await Category.create({
     name: name,
     slug: createSlug(name),
     parentCategory: parentCategory ? parentCategory : null,
-    photo: categoryImage ? categoryImage.secure_url : null,
+    icon: catIcon,
+    photo: catPhoto,
   });
 
   if (parentCategory) {
@@ -138,7 +150,7 @@ export const createProductCategory = asyncHandler(async (req, res) => {
  * @Access private
  */
 export const updateProductCategory = asyncHandler(async (req, res) => {
-  const { name, parentCategory } = req.body;
+  const { name, icon, parentCategory } = req.body;
   const { id } = req.params;
 
   // form validation
@@ -146,33 +158,58 @@ export const updateProductCategory = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Name filed is required!" });
 
   // get previous data
-  const prevData = await Category.findById(id);
+  const updateData = await Category.findById(id);
+
+  // validate category
+  if (!updateData) {
+    return res.status(404).json({ message: "Category not found!" });
+  }
+
+  // icon manage
+  let catIcon = updateData.icon;
+  if (icon) {
+    catIcon = icon;
+  }
 
   // upload category image to cloud
-  const categoryImage = await cloudUpload(req);
+  let catPhoto = updateData.photo;
+
+  if (req.file) {
+    const categoryImage = await cloudUpload(req.file);
+    catPhoto = categoryImage.secure_url;
+    await cloudDelete(`category/${findPublicId(updateData.photo)}`);
+  }
+
+  // parentCategory manage
+  let parentCat = updateData.parentCategory;
+  if (parentCategory) {
+    parentCat = parentCategory;
+  }
 
   // update Category
-  const updatedCategory = await Category.findByIdAndUpdate(
-    id,
-    {
-      name: name ? name : prevData.name,
-      slug: name ? createSlug(name) : prevData.slug,
-      photo: categoryImage ? categoryImage.secure_url : prevData.photo,
-      parentCategory: parentCategory ? parentCategory : prevData.parentCategory,
-    },
-    { new: true }
-  );
+  updateData.name = name;
+  updateData.slug = createSlug(name);
+  updateData.icon = catIcon;
+  updateData.photo = catPhoto;
 
-
-  // if parentCategory changed then push sub category
-  if (parentCategory != prevData.parentCategory) {
+  // manage sub category
+  if (parentCategory != updateData.parentCategory) {
+    // if parentCategory changed then push sub category
     await Category.findByIdAndUpdate(parentCategory, {
-      $push: { subCategory: updatedCategory._id },
+      $push: { subCategory: updateData._id },
+    });
+
+    // if previous parentcategory has this subcategory then remove from database
+    await Category.findByIdAndUpdate(updateData.parentCategory, {
+      $pull: { subCategory: updateData._id },
     });
   }
+
+  updateData.parentCategory = parentCat;
+  updateData.save();
   // response
   res.status(200).json({
-    category: updatedCategory,
+    category: updateData,
     message: "Category Updated Successful",
   });
 });
@@ -188,6 +225,11 @@ export const deleteProductCategory = asyncHandler(async (req, res) => {
 
   // delete category
   const deletedCategory = await Category.findByIdAndDelete(id);
+
+  // delete photo
+  if (deletedCategory.photo) {
+    await cloudDelete(`category/${findPublicId(deletedCategory.photo)}`);
+  }
 
   // response
   res.status(200).json({

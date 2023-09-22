@@ -63,7 +63,7 @@ export const createProductBrand = asyncHandler(async (req, res) => {
   let uploadedLogo = null;
 
   if (req.file) {
-    const logo = await cloudUpload(req.file.path, req.file.fieldname);
+    const logo = await cloudUpload(req.file);
     uploadedLogo = logo.secure_url;
   }
 
@@ -103,7 +103,7 @@ export const updateProductBrand = asyncHandler(async (req, res) => {
 
   if (req.file) {
     // upload logo to cloudinary
-    const logo = await cloudUpload(req.file.path, req.file.fieldname);
+    const logo = await cloudUpload(req.file);
     await cloudDelete(`brand/${findPublicId(brandUpdate.logo)}`);
     updatedLogo = logo.secure_url;
   }
@@ -133,7 +133,7 @@ export const deleteProductBrand = asyncHandler(async (req, res) => {
   // delete brand
   const deletedBrand = await Brand.findByIdAndDelete(id);
 
-  // delete brand
+  // delete brand logo
   if (deletedBrand.logo) {
     await cloudDelete(`brand/${findPublicId(deletedBrand.logo)}`);
   }

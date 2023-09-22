@@ -1,45 +1,53 @@
 import mongoose from "mongoose";
 
 // create schema for category
-const categorySchema = mongoose.Schema({
-    name : {
-        type : String,
-        required : true,
-        unique : true,
-        trim : true
+const categorySchema = mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
     },
-    slug : {
-        type : String,
-        required : true,
-        unique : true,
-        trim : true
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
     },
-    photo : {
-        type : String,
-        trim : true,
-        default : null
+    icon: {
+      type: String,
+      default: null,
+      trim: true,
     },
-    subCategory : {
-        type: [mongoose.Schema.Types.ObjectId],
-        ref: "Category",
-        default: []
+    photo: {
+      type: String,
+      trim: true,
+      default: null,
     },
-    parentCategory : {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Category",
-        default: null
+    subCategory: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: "Category",
+      default: [],
     },
-    trash : {
-        type : Boolean,
-        default : false
+    parentCategory: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      default: null,
     },
-    status : {
-        type : Boolean,
-        default : true
-    }
-},{ 
-    timestamps : true 
-})
+    trash: {
+      type: Boolean,
+      default: false,
+    },
+    status: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
 // export schema model
-export default mongoose.model("Category", categorySchema)
+export default mongoose.model("Category", categorySchema);
