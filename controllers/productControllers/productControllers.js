@@ -1,7 +1,12 @@
 import asyncHandler from "express-async-handler";
-import { cloudUpload } from "../../utils/cloudinary.js";
+import {
+  cloudDelete,
+  cloudUpload,
+  cloudUploads,
+} from "../../utils/cloudinary.js";
 import createSlug from "../../utils/createSlug.js";
 import Product from "../../models/productModels/Product.js";
+import { findPublicId } from "../../helper/helper.js";
 
 /**
  * @Desc Get All Products
@@ -12,9 +17,9 @@ import Product from "../../models/productModels/Product.js";
 
 export const getAllProduct = asyncHandler(async (req, res) => {
   // get all product data
-  const brands = await Product.find();
+  const products = await Product.find();
 
-  if (brands.length > 0) return res.status(200).json(brands);
+  if (products.length > 0) return res.status(200).json(products);
 
   // send a message if product not found
   res.status(404).json({ message: "Product not found!" });
@@ -51,14 +56,18 @@ export const createNewProduct = asyncHandler(async (req, res) => {
     categories,
     tags,
     brand,
-    regular_price,
-    sale_price,
+    sku,
+    productType,
+    simpleProduct,
+    variableProduct,
+    groupProduct,
+    externalProduct,
+    shortDesc,
+    longDesc,
     stock,
-    short_desc,
-    long_desc,
   } = req.body;
 
-  if (!name || !regular_price || !long_desc) {
+  if (!name || !productType) {
     return res.status(400).json({ message: "Fields are required" });
   }
 
@@ -68,22 +77,37 @@ export const createNewProduct = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Product name is already exist!" });
 
   // upload product photo to cloud
-  const productPhoto = await cloudUpload(req);
+  const productPhotos = [];
+  if (req.files) {
+    for (let i = 0; i < req.files.length; i++) {
+      const photos = await cloudUploads(req.files[i]);
+      productPhotos.push(photos);
+    }
+  }
+  let simpleProductData;
+  if (simpleProduct) {
+    const simpleProductData = JSON.parse(simpleProduct);
+  }
 
   // save to database
   const newProduct = await Product.create({
     name,
     slug: createSlug(name),
+    productType,
+    simpleProduct:
+      productType == "simple"
+        ? { ...simpleProductData, photo: productPhotos }
+        : null,
+    variableProduct: productType == "variable" ? variableProduct : null,
+    groupProduct: productType == "group" ? groupProduct : null,
+    externalProduct: productType == "external" ? externalProduct : null,
     categories: categories ? categories : null,
     tags: tags ? tags : null,
     brand: brand ? brand : null,
-    regular_price,
-    sale_price: sale_price ? sale_price : null,
-    short_desc: short_desc ? short_desc : null,
-    long_desc,
+    shortDesc: shortDesc ? shortDesc : null,
+    longDesc: longDesc ? longDesc : null,
     stock: stock ? stock : null,
-    photo: productPhoto ? productPhoto.secure_url : null,
-    gallery: null,
+    sku: sku ? sku : null,
   });
 
   // send response
@@ -109,8 +133,8 @@ export const updateProduct = asyncHandler(async (req, res) => {
     regular_price,
     sale_price,
     stock,
-    short_desc,
-    long_desc,
+    shortDesc,
+    longDesc,
   } = req.body;
 
   // find data
@@ -132,8 +156,8 @@ export const updateProduct = asyncHandler(async (req, res) => {
       brand: brand ? brand : productData.brand,
       regular_price: regular_price ? regular_price : productData.regular_price,
       sale_price: sale_price ? sale_price : productData.sale_price,
-      short_desc: short_desc ? short_desc : productData.short_desc,
-      long_desc: long_desc ? long_desc : productData.long_desc,
+      shortDesc: shortDesc ? shortDesc : productData.shortDesc,
+      longDesc: longDesc ? longDesc : productData.longDesc,
       stock: stock ? stock : productData.stock,
       photo: productPhoto ? productPhoto.secure_url : productData.photo,
       gallery: null,
@@ -161,7 +185,16 @@ export const deleteProduct = asyncHandler(async (req, res) => {
   if (!productData)
     return res.status(404).json({ message: "Product not found" });
 
+  // delete data from database
   const deletedData = await Product.findByIdAndDelete(req.params.id);
+
+  // delete photos
+  if (deletedData.productType == "simple") {
+    const productPhotos = deletedData.simpleProduct.photo;  
+    for (let i = 0; i < productPhotos.length; i++) {
+      await cloudDelete(`product/${findPublicId(productPhotos[i])}`);
+    }
+  }
   // send response
   res.status(200).json({
     product: deletedData,

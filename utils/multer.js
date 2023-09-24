@@ -19,7 +19,4 @@ export const productCategoryMulter = multer({ storage }).single(
 );
 
 // product photos multer middleware
-export const productMulter = multer({ storage }).fields([
-  { name: "product-photo", maxCount: 1 },
-  { name: "product-gallery", maxCount: 10 },
-]);
+export const productPhotoMulter = multer({ storage }).array("product-photo");

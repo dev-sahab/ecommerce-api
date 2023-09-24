@@ -11,7 +11,7 @@ export const sendMail = ({ to, sub, msg }) => {
   });
 
   transport.sendMail({
-    from: "Wolmart <mdshahab433@gmail.com>",
+    from: `Wolmart <${process.env.MAIL_USER}>`,
     to: to,
     subject: sub,
     text: msg,
