@@ -2,7 +2,8 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import asyncHandler from "express-async-handler";
-import { cloudUpload } from "../utils/cloudinary.js";
+import { cloudDelete, cloudUpload } from "../utils/cloudinary.js";
+import { findPublicId } from "../helper/helper.js";
 
 /**
  * @Desc create new user
@@ -79,8 +80,8 @@ export const loginUser = asyncHandler(async (req, res) => {
     { expiresIn: process.env.REFRESH_TOKEN_EXPIRE_IN }
   );
 
-    // Remove password from loginUser object
-    const { password: _, ...userWithoutPassword } = loginUser._doc;
+  // Remove password from loginUser object
+  const { password: _, ...userWithoutPassword } = loginUser._doc;
 
   // set access token to cookie
   res.cookie("accessToken", accessToken, {
@@ -164,6 +165,39 @@ export const userPasswordReset = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @Desc user photo update
+ * @Route /api/v1/auth/profile-photo-update
+ * @METHOD patch
+ * @Access private
+ */
+export const userPhotoUpdate = asyncHandler(async (req, res) => {
+  // get loggedIn user
+  const user = await User.findOne({ email: req.me.email })
+    .populate("role")
+    .select("-password");
+
+  // validate user
+  if (!user) return res.status(400).json({ message: "User not found!" });
+
+  // upload photo
+  let profileImage = user.photo;
+  if (req.file) {
+    const uploadedPhoto = await cloudUpload(req.file);
+    profileImage = uploadedPhoto.secure_url;
+    await cloudDelete(`user/${findPublicId(user.photo)}`);
+  }
+
+  // update data
+  user.photo = profileImage;
+  await user.save();
+
+  res.status(200).json({
+    user: user,
+    message: "Profile Updated",
+  });
+});
+
+/**
  * @Desc user details update
  * @Route /api/v1/auth/profile-update
  * @METHOD patch
@@ -178,21 +212,20 @@ export const userDataUpdate = asyncHandler(async (req, res) => {
   // validate user
   if (!user) return res.status(400).json({ message: "User not found!" });
 
-  // upload photo to cloud
-  const profileImage = await cloudUpload(req);
   // update data
   const data = await User.findByIdAndUpdate(
-    user.id,
+    user._id,
     {
       name: name ? name : user.name,
       email: email ? email : user.email,
       phone: phone ? phone : user.phone,
       address: address ? address : user.address,
       birth_date: birth_date ? birth_date : user.birth_date,
-      photo: profileImage ? profileImage.secure_url : user.photo,
     },
     { new: true }
-  ).select("-password").populate('role');
+  )
+    .select("-password")
+    .populate("role");
 
   res.status(200).json({
     user: data,

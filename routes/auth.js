@@ -6,6 +6,7 @@ import {
   me,
   userPasswordReset,
   userDataUpdate,
+  userPhotoUpdate,
 } from "../controllers/authController.js";
 import tokenVerify from "../middlewares/tokenVerify.js";
 import { userProfileMulter } from "../utils/multer.js";
@@ -19,7 +20,8 @@ router.post("/register", registerUser);
 router.post("/logout", logout);
 router.get("/me", tokenVerify, me);
 router.patch("/reset-password", tokenVerify, userPasswordReset);
-router.patch("/profile-update", tokenVerify, userProfileMulter, userDataUpdate);
+router.patch("/profile-update", tokenVerify, userDataUpdate);
+router.patch("/profile-photo-update", tokenVerify, userProfileMulter, userPhotoUpdate);
 
 // export routes
 export default router;

@@ -110,7 +110,6 @@ export const updateRole = asyncHandler(async (req, res) => {
 export const updateRoleStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
-  console.log(status);
 
   const updatedRole = await Role.findByIdAndUpdate(
     id,
